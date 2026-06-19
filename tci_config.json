@@ -6,7 +6,6 @@
   ],
   "base_value": 10000,
   "sources": [
-    "https://uzse.uz/asking_prices?locale=en",
-    "https://uzse.uz/isu_infos/STK?locale=en"
+    "https://uzse.uz/asking_prices?locale=en"
   ]
 }
