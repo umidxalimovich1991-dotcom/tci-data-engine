@@ -91,8 +91,24 @@ def fetch_all_stocks(session: requests.Session, cfg: dict[str, Any]) -> list[dic
             "query": "",
         }
         payload = fetch_json(session, url, params=params)
+
+        # DEBUG: Actions logda Jett response formatini ko‘rish uchun
+        if offset == 0:
+            print(f"[DEBUG] payload type: {type(payload).__name__}")
+            if isinstance(payload, dict):
+                print(f"[DEBUG] payload keys: {list(payload.keys())}")
+            items_raw = unwrap_items(payload)
+            if items_raw:
+                first = items_raw[0]
+                print(f"[DEBUG] first item keys: {list(first.keys())}")
+                print(f"[DEBUG] first item: {json.dumps(first, ensure_ascii=False)[:600]}")
+            else:
+                print("[DEBUG] unwrap_items returned EMPTY!")
+                print(f"[DEBUG] raw payload: {json.dumps(payload, ensure_ascii=False)[:800]}")
+
         items = unwrap_items(payload)
         if not items:
+            print(f"[DEBUG] No items at offset={offset}, stopping.")
             break
 
         added = 0
@@ -112,6 +128,7 @@ def fetch_all_stocks(session: requests.Session, cfg: dict[str, Any]) -> list[dic
         offset += limit
         time.sleep(0.15)
 
+    print(f"[DEBUG] Total stocks fetched: {len(out)}")
     return out
 
 
@@ -142,11 +159,9 @@ def extract_price_from_rows(rows: list[Any], side: str) -> float | None:
         if isinstance(row, dict):
             p = price_from_dict(row)
         elif isinstance(row, (list, tuple)) and row:
-            # Jett orderbook rows are usually [quantity, price] or [price, quantity].
             nums = [as_number(x) for x in row]
             nums = [x for x in nums if x is not None and x > 0]
             if nums:
-                # Price in UZ market is usually the larger value than lot quantity for this table.
                 p = max(nums)
         if p is not None and p > 0:
             prices.append(p)
@@ -183,13 +198,11 @@ def extract_orderbook_price(payload: Any) -> tuple[float | None, str]:
         if p is not None:
             return p, "top_level_price"
 
-    # Prefer sell side: this is the cheapest price someone is ready to sell at.
     for rows in find_order_lists(payload, "ask"):
         p = extract_price_from_rows(rows, "ask")
         if p is not None:
             return p, "best_ask"
 
-    # Fallback to buy side: highest buyer price.
     for rows in find_order_lists(payload, "bid"):
         p = extract_price_from_rows(rows, "bid")
         if p is not None:
@@ -208,7 +221,6 @@ def fetch_orderbook(session: requests.Session, cfg: dict[str, Any], stock_id: An
 
 
 def stock_fallback_price(item: dict[str, Any]) -> float | None:
-    # Some stockv3 responses include last/current price; use it only if orderbook is empty.
     return price_from_dict(item)
 
 
@@ -218,7 +230,24 @@ def build_tci_data() -> dict[str, Any]:
     session = requests.Session()
 
     all_stocks = fetch_all_stocks(session, cfg)
+
+    if all_stocks:
+        sample = all_stocks[0]
+        ticker_candidates = ["ticker", "symbol", "code", "secCode", "isin", "short_name"]
+        print("[DEBUG] Ticker field check on first stock:")
+        for f in ticker_candidates:
+            print(f"  {f}: {sample.get(f)}")
+
     by_ticker = {normalize_ticker(item.get("ticker")): item for item in all_stocks if normalize_ticker(item.get("ticker"))}
+
+    print(f"[DEBUG] by_ticker count: {len(by_ticker)}")
+    print(f"[DEBUG] by_ticker sample keys: {list(by_ticker.keys())[:10]}")
+    print(f"[DEBUG] wanted tickers: {wanted}")
+
+    matched = [t for t in wanted if t in by_ticker]
+    unmatched = [t for t in wanted if t not in by_ticker]
+    print(f"[DEBUG] Matched: {matched}")
+    print(f"[DEBUG] Unmatched: {unmatched}")
 
     rows: list[dict[str, Any]] = []
     found_count = 0
