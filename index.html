@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FCONTROL TCI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">FCONTROL.UZ</p>
+        <h1>Tommy Capital Index</h1>
+        <p class="subtitle">O‘zbekiston fond bozori uchun avtomatik TCI ma’lumot paneli</p>
+      </div>
+      <button id="reloadBtn">Yangilash</button>
+    </header>
+
+    <section class="cards">
+      <article class="card big">
+        <span>TCI qiymati</span>
+        <strong id="tciValue">—</strong>
+      </article>
+      <article class="card">
+        <span>Kunlik o‘zgarish</span>
+        <strong id="dailyReturn">—</strong>
+      </article>
+      <article class="card">
+        <span>Aksiyalar soni</span>
+        <strong id="countValue">—</strong>
+      </article>
+      <article class="card">
+        <span>Faol narxlar</span>
+        <strong id="activeValue">—</strong>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>TCI tarkibi</h2>
+          <p id="statusText">Ma’lumot yuklanmoqda...</p>
+        </div>
+        <div class="meta">
+          <span id="dateValue">—</span>
+          <span id="updatedValue">—</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ticker</th>
+              <th>Narx</th>
+              <th>Kunlik %</th>
+              <th>Manba</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
