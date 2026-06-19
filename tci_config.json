@@ -1,11 +1,16 @@
 {
   "tickers": [
-    "UZNIF", "HMKB", "HMKBP", "SQBN", "IPTB", "AGBK", "GRBN", "ALBX", "NBU", "MKBK",
-    "TRSB", "TNSB", "KBLN", "UZTL", "UZTLP", "UZMT", "UZMTP", "UZAM", "QZSM", "KVTS",
-    "URTS", "UTG", "UZINV", "KPSG", "UZGE", "BKMY", "FARG", "NAVO", "DORI", "CHB"
+    "URTS", "SQBN", "IPTB", "BRBN", "ALKB", "TNBN", "TRSB", "CBSK", "UZTL", "DORI",
+    "GRBK", "IPKY", "UNVB", "UZAS", "UTGA", "OCBK", "UZIR", "UZMK", "QZSM", "KVTS",
+    "HMKB", "UZAM", "BIOK", "METQ", "UPAT", "UTYK", "TGPG", "BNGP", "KSCM", "OHDN"
   ],
   "base_value": 10000,
-  "sources": [
-    "https://uzse.uz/asking_prices?locale=en"
-  ]
+  "jett": {
+    "stocks_url": "https://api.jett.uz/stockv3",
+    "orderbook_url": "https://api.jett.uz/orderbook/{id}",
+    "limit": 100,
+    "period": "today",
+    "sort_by": "gross_trade_amount",
+    "order_by": "desc"
+  }
 }
