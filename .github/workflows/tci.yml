@@ -1,0 +1,66 @@
+name: FCONTROL TCI Engine
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 13 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fcontrol-tci-engine
+  cancel-in-progress: true
+
+jobs:
+  update-tci-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run TCI engine
+        run: python tci_bot.py
+
+      - name: Show generated files
+        run: |
+          echo "Generated files:"
+          find data public -maxdepth 2 -type f || true
+
+      - name: Commit updated data
+        run: |
+          set -e
+          git config user.email "bot@tommycapital.uz"
+          git config user.name "TCI Data Bot"
+
+          git add -A data public
+          if git diff --staged --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+
+          git commit -m "Update TCI data $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+          for i in 1 2 3; do
+            echo "Push attempt $i"
+            git pull --rebase --autostash origin main || true
+            if git push origin HEAD:main; then
+              echo "Push successful"
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "Push failed after retries"
+          exit 1
