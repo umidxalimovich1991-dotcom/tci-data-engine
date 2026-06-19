@@ -1,0 +1,12 @@
+{
+  "tickers": [
+    "UZNIF", "HMKB", "HMKBP", "SQBN", "IPTB", "AGBK", "GRBN", "ALBX", "NBU", "MKBK",
+    "TRSB", "TNSB", "KBLN", "UZTL", "UZTLP", "UZMT", "UZMTP", "UZAM", "QZSM", "KVTS",
+    "URTS", "UTG", "UZINV", "KPSG", "UZGE", "BKMY", "FARG", "NAVO", "DORI", "CHB"
+  ],
+  "base_value": 10000,
+  "sources": [
+    "https://uzse.uz/asking_prices?locale=en",
+    "https://uzse.uz/isu_infos/STK?locale=en"
+  ]
+}
