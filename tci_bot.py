@@ -27,14 +27,11 @@ def load_config() -> dict[str, Any]:
 
 
 def as_number(value: Any) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, bool):
+    if value is None or isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
-        if math.isfinite(float(value)):
-            return float(value)
-        return None
+        num = float(value)
+        return num if math.isfinite(num) else None
     text = str(value).strip().replace("\xa0", " ").replace("UZS", "").replace("%", "")
     text = text.replace(" ", "")
     if not text:
@@ -45,15 +42,19 @@ def as_number(value: Any) -> float | None:
         text = text.replace(",", ".")
     try:
         num = float(text)
-        if math.isfinite(num):
-            return num
+        return num if math.isfinite(num) else None
     except Exception:
         return None
-    return None
 
 
 def normalize_ticker(value: Any) -> str:
     return str(value or "").strip().upper().replace(" ", "")
+
+
+def fetch_json(session: requests.Session, url: str, *, params: dict[str, Any] | None = None) -> Any:
+    r = session.get(url, params=params, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
 
 
 def unwrap_items(payload: Any) -> list[dict[str, Any]]:
@@ -72,12 +73,6 @@ def unwrap_items(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
-def fetch_json(session: requests.Session, url: str, *, params: dict[str, Any] | None = None) -> Any:
-    r = session.get(url, params=params, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    return r.json()
-
-
 def fetch_all_stocks(session: requests.Session, cfg: dict[str, Any]) -> list[dict[str, Any]]:
     jett = cfg.get("jett", {})
     url = jett.get("stocks_url", "https://api.jett.uz/stockv3")
@@ -86,7 +81,7 @@ def fetch_all_stocks(session: requests.Session, cfg: dict[str, Any]) -> list[dic
     out: list[dict[str, Any]] = []
     seen: set[int] = set()
 
-    while offset <= 1000:
+    while offset <= 2000:
         params = {
             "offset": offset,
             "limit": limit,
@@ -120,75 +115,85 @@ def fetch_all_stocks(session: requests.Session, cfg: dict[str, Any]) -> list[dic
     return out
 
 
-def list_from_keys(obj: dict[str, Any], keys: list[str]) -> list[Any]:
-    for key in keys:
-        val = obj.get(key)
-        if isinstance(val, list):
-            return val
-    return []
+def stock_name(item: dict[str, Any]) -> str:
+    for key in ["issue_name", "name", "company_name", "issuer_name", "title"]:
+        val = item.get(key)
+        if val:
+            return str(val)
+    return ""
 
 
-def price_from_order_list(rows: list[Any], side: str) -> float | None:
+def price_from_dict(d: dict[str, Any]) -> float | None:
+    for key in [
+        "last_price", "lastPrice", "current_price", "currentPrice", "close_price", "closePrice",
+        "price", "narx", "rate", "value", "best_price", "bestPrice"
+    ]:
+        if key in d:
+            n = as_number(d.get(key))
+            if n is not None and n > 0:
+                return n
+    return None
+
+
+def extract_price_from_rows(rows: list[Any], side: str) -> float | None:
     prices: list[float] = []
     for row in rows:
-        price = None
+        p = None
         if isinstance(row, dict):
-            for key in ["price", "narx", "rate", "value", "p"]:
-                if key in row:
-                    price = as_number(row.get(key))
-                    break
+            p = price_from_dict(row)
         elif isinstance(row, (list, tuple)) and row:
-            price = as_number(row[0])
-        if price is not None and price > 0:
-            prices.append(price)
+            # Jett orderbook rows are usually [quantity, price] or [price, quantity].
+            nums = [as_number(x) for x in row]
+            nums = [x for x in nums if x is not None and x > 0]
+            if nums:
+                # Price in UZ market is usually the larger value than lot quantity for this table.
+                p = max(nums)
+        if p is not None and p > 0:
+            prices.append(p)
     if not prices:
         return None
-    # Sell side: best ask is the lowest sell price. Buy side: best bid is the highest buy price.
     return min(prices) if side == "ask" else max(prices)
 
 
-def recursive_price_candidates(obj: Any) -> list[float]:
-    candidates: list[float] = []
+def find_order_lists(obj: Any, side: str) -> list[list[Any]]:
+    lists: list[list[Any]] = []
     if isinstance(obj, dict):
         for key, val in obj.items():
             k = str(key).lower()
-            if any(word in k for word in ["last_price", "lastprice", "current_price", "close_price", "price", "narx"]):
-                n = as_number(val)
-                if n is not None and n > 0:
-                    candidates.append(n)
-            candidates.extend(recursive_price_candidates(val))
+            if isinstance(val, list):
+                if side == "ask" and any(w in k for w in ["ask", "sell", "offer", "sot"]):
+                    lists.append(val)
+                if side == "bid" and any(w in k for w in ["bid", "buy", "xarid"]):
+                    lists.append(val)
+            if isinstance(val, (dict, list)):
+                lists.extend(find_order_lists(val, side))
     elif isinstance(obj, list):
         for item in obj:
-            candidates.extend(recursive_price_candidates(item))
-    return candidates
+            if isinstance(item, (dict, list)):
+                lists.extend(find_order_lists(item, side))
+    return lists
 
 
 def extract_orderbook_price(payload: Any) -> tuple[float | None, str]:
-    if not isinstance(payload, dict):
+    if not isinstance(payload, (dict, list)):
         return None, "bad_orderbook"
 
-    # 1) Explicit last/current price fields are best if Jett returns them.
-    for key in ["last_price", "lastPrice", "current_price", "currentPrice", "price", "close_price", "closePrice"]:
-        n = as_number(payload.get(key))
-        if n is not None and n > 0:
-            return n, key
+    if isinstance(payload, dict):
+        p = price_from_dict(payload)
+        if p is not None:
+            return p, "top_level_price"
 
-    # 2) Ask/sell side from orderbook.
-    ask_rows = list_from_keys(payload, ["asks", "ask", "sell", "sells", "sell_orders", "sellOrders", "offers"])
-    ask = price_from_order_list(ask_rows, "ask")
-    if ask is not None:
-        return ask, "best_ask"
+    # Prefer sell side: this is the cheapest price someone is ready to sell at.
+    for rows in find_order_lists(payload, "ask"):
+        p = extract_price_from_rows(rows, "ask")
+        if p is not None:
+            return p, "best_ask"
 
-    # 3) Bid/buy side from orderbook.
-    bid_rows = list_from_keys(payload, ["bids", "bid", "buy", "buys", "buy_orders", "buyOrders"])
-    bid = price_from_order_list(bid_rows, "bid")
-    if bid is not None:
-        return bid, "best_bid"
-
-    # 4) Deep fallback for unknown structure.
-    candidates = [x for x in recursive_price_candidates(payload) if 0 < x < 1_000_000_000]
-    if candidates:
-        return candidates[0], "recursive_price"
+    # Fallback to buy side: highest buyer price.
+    for rows in find_order_lists(payload, "bid"):
+        p = extract_price_from_rows(rows, "bid")
+        if p is not None:
+            return p, "best_bid"
 
     return None, "no_price"
 
@@ -198,21 +203,18 @@ def fetch_orderbook(session: requests.Session, cfg: dict[str, Any], stock_id: An
     url = url_template.format(id=stock_id)
     payload = fetch_json(session, url)
     price, method = extract_orderbook_price(payload)
-    return price, payload if isinstance(payload, dict) else {"raw": payload}, method
+    wrapped = payload if isinstance(payload, dict) else {"raw": payload}
+    return price, wrapped, method
 
 
-def stock_name(item: dict[str, Any]) -> str:
-    for key in ["issue_name", "name", "company_name", "issuer_name", "title"]:
-        val = item.get(key)
-        if val:
-            return str(val)
-    return ""
+def stock_fallback_price(item: dict[str, Any]) -> float | None:
+    # Some stockv3 responses include last/current price; use it only if orderbook is empty.
+    return price_from_dict(item)
 
 
 def build_tci_data() -> dict[str, Any]:
     cfg = load_config()
     wanted = [normalize_ticker(x) for x in cfg.get("tickers", [])]
-    wanted_set = set(wanted)
     session = requests.Session()
 
     all_stocks = fetch_all_stocks(session, cfg)
@@ -229,6 +231,8 @@ def build_tci_data() -> dict[str, Any]:
             "id": None,
             "issue_name": "",
             "price": None,
+            "last_price": None,
+            "current_price": None,
             "prev_close": None,
             "daily_return": None,
             "percentage": None,
@@ -254,15 +258,25 @@ def build_tci_data() -> dict[str, Any]:
                 "total": as_number(item.get("total")),
                 "volume": as_number(item.get("volume")) or as_number(item.get("quantity")),
                 "trades": as_number(item.get("deals")) or as_number(item.get("trades")),
-                "raw": json.dumps(item, ensure_ascii=False)[:900],
+                "raw": json.dumps(item, ensure_ascii=False)[:1200],
             })
+
+            fallback = stock_fallback_price(item)
+            if fallback is not None:
+                row["price"] = fallback
+                row["last_price"] = fallback
+                row["current_price"] = fallback
+                row["price_method"] = "stockv3_price"
+
             if stock_id is not None:
                 try:
                     price, ob_payload, method = fetch_orderbook(session, cfg, stock_id)
-                    row["price"] = price
-                    row["price_method"] = method
                     if price is not None:
-                        row["raw_orderbook"] = json.dumps(ob_payload, ensure_ascii=False)[:900]
+                        row["price"] = price
+                        row["last_price"] = price
+                        row["current_price"] = price
+                    row["price_method"] = method
+                    row["raw_orderbook"] = json.dumps(ob_payload, ensure_ascii=False)[:1200]
                 except Exception as e:
                     row["price_method"] = f"orderbook_error:{type(e).__name__}"
                 time.sleep(0.12)
@@ -285,6 +299,10 @@ def build_tci_data() -> dict[str, Any]:
         "active_price_count": len([r for r in rows if r.get("price") is not None]),
         "active_return_count": len(active_returns),
         "constituents": rows,
+        "items": rows,
+        "stocks": rows,
+        "data": rows,
+        "results": rows,
         "source_note": "Live data from Jett public API: stockv3 and orderbook/{id}. Verify before publication.",
     }
     return latest
@@ -294,7 +312,7 @@ def save_outputs(latest: dict[str, Any]) -> None:
     rows = latest["constituents"]
     csv_path = DATA_DIR / "raw_jett_latest.csv"
     fields = [
-        "date", "ticker", "id", "issue_name", "price", "price_method",
+        "date", "ticker", "id", "issue_name", "price", "last_price", "current_price", "price_method",
         "percentage", "daily_return", "volume", "trades", "traded_value", "total", "source", "raw",
     ]
     with csv_path.open("w", newline="", encoding="utf-8-sig") as f:
