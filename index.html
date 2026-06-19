@@ -248,8 +248,8 @@
       <div class="mt-10 bg-white rounded-[28px] shadow-xl border overflow-hidden">
         <div class="p-6 md:p-8 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h3 class="text-2xl font-black text-slate-950">TCI tarkibi: 30 kompaniya</h3>
-            <p class="text-slate-600 mt-1">DOCX ro‘yxatdagi emitentlar shu index blokiga ulandi. 10 tasi yadro, qolgani diversifikatsiya.</p>
+            <h3 class="text-2xl font-black text-slate-950">Online narxlar: TCI kompaniyalari</h3>
+            <p class="text-slate-600 mt-1">UZSE online order book’dan narxi kelgan tickerlar avtomatik ko‘rsatiladi. Narx yo‘q bo‘lsa jadvalda yashiriladi.</p>
           </div>
           <div class="flex gap-2">
             <button onclick="renderStocks('all')" id="filter-all" class="filter-btn active px-4 py-2 rounded-xl border font-black text-sm">Hammasi</button>
@@ -308,65 +308,105 @@
   <script>
 
     const tciStocks = [
-      { ticker: 'URTS', name: 'O‘zRTXB', role: 'Core', weight: 8.50, change: '+1.24%' },
-      { ticker: 'SQBN', name: 'O‘zsanoatqurilishbank', role: 'Core', weight: 8.50, change: '+0.50%' },
-      { ticker: 'IPTB', name: 'Ipoteka-bank', role: 'Core', weight: 8.50, change: '-0.20%' },
-      { ticker: 'BRBN', name: 'Biznesni rivojlantirish banki', role: 'Diversification', weight: 0.75, change: '+0.80%' },
-      { ticker: 'ALKB', name: 'Aloqabank', role: 'Core', weight: 8.50, change: '+1.10%' },
-      { ticker: 'TNBN', name: 'Turonbank', role: 'Diversification', weight: 0.75, change: '-0.15%' },
-      { ticker: 'TRSB', name: 'Trastbank', role: 'Diversification', weight: 0.75, change: '+0.35%' },
-      { ticker: 'CBSK', name: 'Chilonzor buyum savdo kompleksi', role: 'Diversification', weight: 0.75, change: '+0.62%' },
-      { ticker: 'UZTL', name: 'O‘zbektelekom', role: 'Core', weight: 8.50, change: '+1.44%' },
-      { ticker: 'DORI', name: 'DORI-DARMON', role: 'Diversification', weight: 0.75, change: '-0.05%' },
-      { ticker: 'GRBK', name: 'Garant bank', role: 'Diversification', weight: 0.75, change: '+1.24%' },
-      { ticker: 'IPKY', name: 'Ipak Yo‘li bank', role: 'Diversification', weight: 0.75, change: '+0.50%' },
-      { ticker: 'UNVB', name: 'Universal bank', role: 'Diversification', weight: 0.75, change: '-0.20%' },
-      { ticker: 'UZAS', name: 'O‘zagrosug‘urta', role: 'Diversification', weight: 0.75, change: '+0.80%' },
-      { ticker: 'UTGA', name: 'O‘ztransgaz', role: 'Diversification', weight: 0.75, change: '+1.10%' },
-      { ticker: 'OCBK', name: 'OCTOBANK', role: 'Diversification', weight: 0.75, change: '-0.15%' },
-      { ticker: 'UZIR', name: 'O‘zbekko‘mir', role: 'Diversification', weight: 0.75, change: '+0.35%' },
-      { ticker: 'UZMK', name: 'O‘zmetkombinat', role: 'Core', weight: 8.50, change: '+0.62%' },
-      { ticker: 'QZSM', name: 'Qizilqumsement', role: 'Core', weight: 8.50, change: '+1.44%' },
-      { ticker: 'KVTS', name: 'Kvarts', role: 'Core', weight: 8.50, change: '-0.05%' },
-      { ticker: 'HMKB', name: 'Hamkorbank', role: 'Core', weight: 8.50, change: '+1.24%' },
-      { ticker: 'UZAM', name: 'UzAuto Motors', role: 'Core', weight: 8.50, change: '+0.50%' },
-      { ticker: 'BIOK', name: 'Biokimyo', role: 'Diversification', weight: 0.75, change: '-0.20%' },
-      { ticker: 'METQ', name: 'METQ', role: 'Diversification', weight: 0.75, change: '+0.80%' },
-      { ticker: 'UPAT', name: 'O‘zparavtotrans', role: 'Diversification', weight: 0.75, change: '+1.10%' },
-      { ticker: 'UTYK', name: 'O‘ztemiryo‘lkonteyner', role: 'Diversification', weight: 0.75, change: '-0.15%' },
-      { ticker: 'TGPG', name: 'TASHGIPROGOR', role: 'Diversification', weight: 0.75, change: '+0.35%' },
-      { ticker: 'BNGP', name: 'Buxoroneftgazparmalash', role: 'Diversification', weight: 0.75, change: '+0.62%' },
-      { ticker: 'KSCM', name: 'Quvasoysement', role: 'Diversification', weight: 0.75, change: '+1.44%' },
-      { ticker: 'OHDN', name: 'Ohangaron don', role: 'Diversification', weight: 0.75, change: '-0.05%' }
+      { ticker: 'URTS', name: 'O‘zRTXB', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'SQBN', name: 'O‘zsanoatqurilishbank', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'IPTB', name: 'Ipoteka-bank', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'BRBN', name: 'Biznesni rivojlantirish banki', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'ALKB', name: 'Aloqabank', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'TNBN', name: 'Turonbank', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'TRSB', name: 'Trastbank', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'CBSK', name: 'Chilonzor buyum savdo kompleksi', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UZTL', name: 'O‘zbektelekom', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'DORI', name: 'DORI-DARMON', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'GRBK', name: 'Garant bank', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'IPKY', name: 'Ipak Yo‘li bank', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UNVB', name: 'Universal bank', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UZAS', name: 'O‘zagrosug‘urta', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UTGA', name: 'O‘ztransgaz', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'OCBK', name: 'OCTOBANK', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UZIR', name: 'O‘zbekko‘mir', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UZMK', name: 'O‘zmetkombinat', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'QZSM', name: 'Qizilqumsement', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'KVTS', name: 'Kvarts', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'HMKB', name: 'Hamkorbank', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'UZAM', name: 'UzAuto Motors', role: 'Core', weight: 8.50, change: '—' },
+      { ticker: 'BIOK', name: 'Biokimyo', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'METQ', name: 'METQ', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UPAT', name: 'O‘zparavtotrans', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'UTYK', name: 'O‘ztemiryo‘lkonteyner', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'TGPG', name: 'TASHGIPROGOR', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'BNGP', name: 'Buxoroneftgazparmalash', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'KSCM', name: 'Quvasoysement', role: 'Diversification', weight: 0.75, change: '—' },
+      { ticker: 'OHDN', name: 'Ohangaron don', role: 'Diversification', weight: 0.75, change: '—' }
     ];
 
+    let currentFilter = 'all';
+    let liveLoaded = false;
+
+    function parseBestPrice(raw) {
+      if (!raw) return null;
+      const m = String(raw).match(/Best Sell Price:\s*UZS\s*([0-9\s,]+(?:\.[0-9]+)?)/i)
+             || String(raw).match(/Best Buy Price:\s*UZS\s*([0-9\s,]+(?:\.[0-9]+)?)/i)
+             || String(raw).match(/Last Price:\s*UZS\s*([0-9\s,]+(?:\.[0-9]+)?)/i);
+      if (!m) return null;
+      const n = Number(m[1].replace(/\s/g, '').replace(/,/g, ''));
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function fmtPrice(n) {
+      return Number(n).toLocaleString('en-US', { maximumFractionDigits: 4 }) + ' UZS';
+    }
+
+    function visibleStocks(filter='all') {
+      // Default: online narxi bor tickerlargina chiqadi.
+      return tciStocks.filter(s => {
+        const okFilter = filter === 'all' || s.role === filter;
+        return okFilter && s.priceText;
+      });
+    }
+
     function renderTicker(){
-      const items = tciStocks.slice(0, 15).concat(tciStocks.slice(0, 15));
+      const liveRows = tciStocks.filter(s => s.priceText);
+      const base = liveRows.length ? liveRows : tciStocks.slice(0, 15);
+      const items = base.concat(base);
       document.getElementById('tickerMove').innerHTML = items.map(s => {
-        const up = !s.change.startsWith('-');
-        const c = up ? 'text-emerald-400' : 'text-red-400';
-        return `<span>${s.ticker} <b class="${c}">${s.change}</b></span>`;
+        const ch = s.change || '—';
+        const up = !String(ch).startsWith('-');
+        const c = ch === '—' ? 'text-slate-300' : (up ? 'text-emerald-400' : 'text-red-400');
+        const price = s.priceText ? ` <span class="text-yellow-300">${s.priceText}</span>` : '';
+        return `<span>${s.ticker}${price} <b class="${c}">${ch}</b></span>`;
       }).join('');
     }
 
     function renderStocks(filter='all'){
-      const rows = tciStocks.filter(s => filter === 'all' || s.role === filter);
-      document.getElementById('stockRows').innerHTML = rows.map((s, i) => {
-        const up = !s.change.startsWith('-');
-        const roleText = s.role === 'Core' ? 'Yadro' : 'Diversifikatsiya';
-        const badge = s.role === 'Core' ? 'badge-core' : 'badge-div';
-        return `<tr>
-          <td class="text-slate-500 font-bold">${i+1}</td>
-          <td><b class="text-slate-950">${s.ticker}</b></td>
-          <td>${s.name}</td>
-          <td class="font-mono font-bold">${s.priceText || "—"}</td>
-          <td><span class="${badge} px-3 py-1 rounded-full text-xs font-black">${roleText}</span></td>
-          <td>${s.weight.toFixed(2)}%</td>
-          <td class="font-black ${up ? 'text-emerald-600' : 'text-red-600'}">${s.change}</td>
-        </tr>`;
-      }).join('');
+      currentFilter = filter;
+      const rows = liveLoaded ? visibleStocks(filter) : [];
+      const tbody = document.getElementById('stockRows');
+      if (!liveLoaded) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-slate-500 font-bold py-8">Online narxlar yuklanmoqda...</td></tr>`;
+      } else if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-600 font-black py-8">Hozir UZSE online order book’dan narx kelmadi. Actions → Run workflow qiling.</td></tr>`;
+      } else {
+        tbody.innerHTML = rows.map((s, i) => {
+          const ch = s.change || '—';
+          const up = !String(ch).startsWith('-');
+          const roleText = s.role === 'Core' ? 'Yadro' : 'Diversifikatsiya';
+          const badge = s.role === 'Core' ? 'badge-core' : 'badge-div';
+          const chClass = ch === '—' ? 'text-slate-500' : (up ? 'text-emerald-600' : 'text-red-600');
+          return `<tr>
+            <td class="text-slate-500 font-bold">${i+1}</td>
+            <td><b class="text-slate-950">${s.ticker}</b></td>
+            <td>${s.name}</td>
+            <td class="font-mono font-black text-slate-950">${s.priceText}</td>
+            <td><span class="${badge} px-3 py-1 rounded-full text-xs font-black">${roleText}</span></td>
+            <td>${s.weight.toFixed(2)}%</td>
+            <td class="font-black ${chClass}">${ch}</td>
+          </tr>`;
+        }).join('');
+      }
       document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-      document.getElementById('filter-'+filter).classList.add('active');
+      const btn = document.getElementById('filter-'+filter);
+      if (btn) btn.classList.add('active');
     }
 
     function initTCIChart(){
@@ -392,26 +432,36 @@
     }
 
     function applyLiveTCI(data){
-      if (!data || !Array.isArray(data.constituents)) return;
+      liveLoaded = true;
+      if (!data || !Array.isArray(data.constituents)) {
+        renderTicker();
+        renderStocks(currentFilter);
+        return;
+      }
+
       const byTicker = {};
       data.constituents.forEach(x => { if (x.ticker) byTicker[String(x.ticker).toUpperCase()] = x; });
 
       tciStocks.forEach(s => {
         const live = byTicker[s.ticker.toUpperCase()];
         if (!live) return;
-        if (live.price !== null && live.price !== undefined) {
-          s.priceText = Number(live.price).toLocaleString('en-US', { maximumFractionDigits: 4 }) + ' UZS';
+
+        // Eng ishonchli: raw ichidagi Best Sell Price. Agar JSON price xato bo‘lsa ham shu tuzatadi.
+        const rawPrice = parseBestPrice(live.raw);
+        const finalPrice = rawPrice ?? live.price;
+        if (finalPrice !== null && finalPrice !== undefined && Number(finalPrice) > 0) {
+          s.priceText = fmtPrice(finalPrice);
         }
+
         if (live.daily_return !== null && live.daily_return !== undefined) {
           const pct = Number(live.daily_return) * 100;
           s.change = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
         }
       });
 
-      const valueNodes = Array.from(document.querySelectorAll('h2, h3'));
       const tciValue = data.tci_value || data.base_value;
       if (tciValue) {
-        valueNodes.forEach(el => {
+        document.querySelectorAll('h2, h3').forEach(el => {
           if (el.textContent.trim() === '1,452.80') {
             el.textContent = Number(tciValue).toLocaleString('en-US', { maximumFractionDigits: 2 });
           }
@@ -419,7 +469,7 @@
       }
 
       renderTicker();
-      renderStocks('all');
+      renderStocks(currentFilter);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
