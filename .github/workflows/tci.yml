@@ -2,6 +2,14 @@ name: FCONTROL TCI Engine
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "tci_bot.py"
+      - "tci_config.json"
+      - "requirements.txt"
+      - ".github/workflows/tci.yml"
   schedule:
     - cron: "10 13 * * 1-5"
 
@@ -37,6 +45,17 @@ jobs:
         run: |
           echo "Generated files:"
           find data public -maxdepth 2 -type f || true
+          echo "JSON preview:"
+          python - <<'PY'
+          import json
+          p='public/tci_latest.json'
+          d=json.load(open(p, encoding='utf-8'))
+          print('source=', d.get('source'))
+          print('found=', d.get('found_in_stockv3_count'))
+          print('active_price_count=', d.get('active_price_count'))
+          for r in (d.get('items') or d.get('constituents') or [])[:10]:
+              print(r.get('ticker'), r.get('id'), r.get('price'), r.get('price_method'))
+          PY
 
       - name: Commit updated data
         run: |
