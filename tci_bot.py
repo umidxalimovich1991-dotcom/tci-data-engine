@@ -53,8 +53,7 @@ def all_nums(text):
 
 def load_config():
     cfg_path = ROOT / "tci_config.json"
-    data = json.loads(cfg_path.read_text(encoding="utf-8"))
-    return data
+    return json.loads(cfg_path.read_text(encoding="utf-8"))
 
 
 def has_ticker(text, tickers):
@@ -65,27 +64,43 @@ def has_ticker(text, tickers):
     return None
 
 
+def number_after_label(text, labels):
+    txt = clean(text)
+    upper = txt.upper()
+    for label in labels:
+        p = upper.find(label.upper())
+        if p >= 0:
+            part = txt[p + len(label):]
+            nums = all_nums(part)
+            if nums:
+                return nums[0][1]
+    return None
+
+
 def pick_price(raw, ticker):
     txt = clean(raw)
+
+    # Best source on UZSE asking_prices table.
+    labelled = number_after_label(txt, ["Best Sell Price", "Best Buy Price", "Last Price", "Close Price", "Price"])
+    if labelled is not None:
+        return labelled
+
     pos = txt.upper().find(ticker.upper())
     after = txt[pos + len(ticker):] if pos >= 0 else txt
     nums = all_nums(after)
     if not nums:
         return None
 
-    # On UZSE rows price comes after UZS after ticker/name. Prefer first sane number after UZS.
     uzs_pos = after.upper().find("UZS")
     if uzs_pos >= 0:
         nums_after_uzs = [(tok, val, p) for tok, val, p in nums if p > uzs_pos]
         if nums_after_uzs:
             return nums_after_uzs[0][1]
 
-    # Prefer decimal values like 67.75, 33.8, 3.13.
     for tok, val, _ in nums:
         if ("." in tok or "," in tok) and 0 < val < 1_000_000_000:
             return val
 
-    # Fallback: ignore row/order numbers and years.
     for _, val, _ in nums:
         if val > 0 and val not in range(1, 101) and val not in range(1900, 2101):
             return val
@@ -104,14 +119,15 @@ def extract_row(row, ticker, source):
                     return n
         return None
 
-    price = by_name(["close", "last", "price", "цена", "narx", "quotation"])
+    # Force UZSE asking rows to use explicit Best Sell/Buy label from the full raw row.
+    price = pick_price(raw, ticker)
+    if price is None:
+        price = by_name(["close", "last", "price", "цена", "narx", "quotation"])
+
     prev_close = by_name(["prev", "previous", "oldingi", "пред", "закр"])
     volume = by_name(["volume", "quantity", "объем", "количество", "hajm"])
     trades = by_name(["trades", "deals", "transactions", "битим", "сдел"])
     traded_value = by_name(["value", "сумма", "стоимость", "qiymat"])
-
-    if price is None or price == 1:
-        price = pick_price(raw, ticker)
 
     daily_return = None
     if price is not None and prev_close not in (None, 0):
@@ -160,11 +176,23 @@ def parse_source(url, tickers):
     return rows
 
 
+def price_score(row):
+    src = row.get("source", "")
+    price = row.get("price")
+    if price is None or price == 1:
+        return -1
+    if "asking_prices" in src:
+        return 100
+    if "isu_infos" in src:
+        return 10
+    return 1
+
+
 def merge(rows, tickers):
     out = {t: {
         "date": str(date.today()), "ticker": t, "price": None, "prev_close": None,
         "daily_return": None, "volume": None, "trades": None, "traded_value": None,
-        "source": "", "raw": ""
+        "source": "", "raw": "", "_score": -1
     } for t in tickers}
 
     for r in rows:
@@ -172,8 +200,11 @@ def merge(rows, tickers):
         if t not in out:
             continue
         cur = out[t]
-        if r.get("price") is not None and r.get("price") != 1:
-            cur["price"] = r["price"]
+        sc = price_score(r)
+        if sc > cur.get("_score", -1):
+            cur["price"] = r.get("price")
+            cur["raw"] = r.get("raw") or cur["raw"]
+            cur["_score"] = sc
         if r.get("prev_close") is not None:
             cur["prev_close"] = r["prev_close"]
         if r.get("daily_return") is not None:
@@ -185,6 +216,9 @@ def merge(rows, tickers):
             cur["source"] = (cur["source"] + "; " + r["source"]).strip("; ")
         if r.get("raw") and not cur["raw"]:
             cur["raw"] = r["raw"]
+
+    for item in out.values():
+        item.pop("_score", None)
     return list(out.values())
 
 
