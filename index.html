@@ -1,68 +1,434 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FCONTROL TCI</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tommy Capital Index (TCI)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: Inter, sans-serif; scroll-behavior: smooth; background:#f8fafc; color:#0f172a; }
+    .gold { color:#d4af37; }
+    .gold-bg { background:#d4af37; }
+    .dark-header { background:rgba(2,6,23,.94); backdrop-filter:blur(14px); border-bottom:1px solid rgba(212,175,55,.25); }
+    .hero-bg { background: radial-gradient(circle at top left, rgba(212,175,55,.18), transparent 35%), linear-gradient(135deg,#020617 0%,#0f172a 55%,#111827 100%); }
+    .ticker-wrap { overflow:hidden; white-space:nowrap; background:#020617; color:#fff; border-bottom:1px solid rgba(212,175,55,.22); }
+    @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .ticker-move { display:inline-flex; gap:34px; min-width:200%; animation:ticker 28s linear infinite; }
+    .chart-container { position:relative; width:100%; height:360px; max-height:420px; }
+    .tci-card { transition:.25s ease; border:1px solid #e2e8f0; }
+    .tci-card:hover { transform:translateY(-4px); box-shadow:0 18px 40px -20px rgba(15,23,42,.35); border-color:#d4af37; }
+
+    .stock-table { width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; }
+    .stock-table th { text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#64748b; background:#f8fafc; padding:14px 16px; border-bottom:1px solid #e2e8f0; }
+    .stock-table td { padding:14px 16px; border-bottom:1px solid #e2e8f0; font-size:14px; }
+    .badge-core { background:rgba(212,175,55,.16); color:#92400e; border:1px solid rgba(212,175,55,.35); }
+    .badge-div { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
+    .filter-btn.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+  
+    /* === TCI CINEMATIC INTRO === */
+    #tciIntro {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background:
+        radial-gradient(circle at center, rgba(212,175,55,.18), transparent 34%),
+        radial-gradient(circle at 50% 62%, rgba(255,215,0,.10), transparent 25%),
+        #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      animation: introExit .9s ease forwards;
+      animation-delay: 4s;
+    }
+    #tciIntro::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212,175,55,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,.045) 1px, transparent 1px);
+      background-size: 70px 70px;
+      opacity: .55;
+    }
+    #tciIntro::after {
+      content: "";
+      position: absolute;
+      width: 120%;
+      height: 120%;
+      background: conic-gradient(from 90deg, transparent, rgba(212,175,55,.13), transparent, rgba(255,255,255,.05), transparent);
+      animation: slowSpin 5s linear infinite;
+      opacity: .75;
+    }
+    .intro-box {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .intro-logo-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: min(82vw, 560px);
+      animation: logoEnter 1.25s cubic-bezier(.16,1,.3,1) both;
+    }
+    .intro-logo-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      filter:
+        drop-shadow(0 0 18px rgba(212,175,55,.55))
+        drop-shadow(0 0 46px rgba(212,175,55,.28));
+    }
+    .vvv-shine {
+      position: absolute;
+      left: -140%;
+      bottom: 11%;
+      width: 260%;
+      height: 9px;
+      border-radius: 999px;
+      background: linear-gradient(90deg,
+        transparent,
+        rgba(212,175,55,.1),
+        rgba(212,175,55,.95),
+        rgba(255,255,255,1),
+        rgba(255,225,120,1),
+        rgba(212,175,55,.95),
+        rgba(212,175,55,.1),
+        transparent);
+      filter: blur(5px);
+      box-shadow:
+        0 0 28px rgba(255,215,0,.95),
+        0 0 70px rgba(255,215,0,.6),
+        0 0 130px rgba(255,215,0,.35);
+      animation: vvvuuuv 1.35s cubic-bezier(.19,1,.22,1) 1.25s both;
+      transform: rotate(-2deg);
+    }
+    .intro-title {
+      margin-top: 28px;
+      color: #fff;
+      font-weight: 900;
+      letter-spacing: .07em;
+      font-size: clamp(20px, 3.4vw, 42px);
+      text-transform: uppercase;
+      text-shadow: 0 0 30px rgba(212,175,55,.35);
+      animation: textRise .9s ease 1.65s both;
+    }
+    .intro-sub {
+      margin-top: 10px;
+      color: #d4af37;
+      font-weight: 900;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      font-size: clamp(11px, 1.6vw, 17px);
+      animation: textRise .9s ease 2.05s both;
+    }
+    @keyframes logoEnter {
+      0% { opacity: 0; transform: scale(.82) translateY(18px); filter: blur(12px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    }
+    @keyframes vvvuuuv {
+      0% { transform: translateX(-60%) rotate(-2deg) skewX(-25deg); opacity: 0; }
+      15% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { transform: translateX(80%) rotate(-2deg) skewX(-25deg); opacity: 0; }
+    }
+    @keyframes textRise {
+      from { opacity: 0; transform: translateY(22px); filter: blur(8px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    @keyframes introExit {
+      to { opacity: 0; visibility: hidden; pointer-events: none; }
+    }
+    @keyframes slowSpin {
+      to { transform: rotate(360deg); }
+    }
+
+  </style>
 </head>
 <body>
-  <main class="shell">
-    <header class="hero">
+
+  <!-- TCI CINEMATIC INTRO -->
+  <div id="tciIntro">
+    <div class="intro-box">
+      <div class="intro-logo-wrap">
+        <img src="logo.svg" alt="Tommy Capital Logo">
+        <div class="vvv-shine"></div>
+      </div>
+      <div class="intro-title">Bu mening birinchi qadamim</div>
+      <div class="intro-sub">Faqat to‘xtamaslik kerak</div>
+    </div>
+  </div>
+
+  <header class="fixed top-0 w-full z-50 dark-header">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-20">
+        <a href="#home" class="flex items-center gap-3">
+          <img src="logo.svg" alt="Tommy Capital Logo" class="w-14 h-14 object-contain rounded-xl bg-white/95 p-1" />
+          <div class="leading-tight">
+            <div class="text-xl md:text-2xl font-black tracking-wide text-white">TOMMY <span class="gold">CAPITAL</span></div>
+            <div class="text-[11px] uppercase tracking-[.28em] text-slate-400">Index Platform</div>
+          </div>
+        </a>
+        <nav class="hidden md:flex gap-8 text-sm font-semibold text-slate-300">
+          <a href="#index" class="hover:text-yellow-400">TCI</a>
+          <a href="#portfolios" class="hover:text-yellow-400">Portfellar</a>
+          <a href="#market" class="hover:text-yellow-400">Bozor</a>
+          <a href="#about" class="hover:text-yellow-400">Ogohlantirish</a>
+        </nav>
+        <a href="#index" class="hidden sm:inline-flex px-5 py-2.5 rounded-xl gold-bg text-slate-950 text-sm font-black hover:opacity-90">Indeksni ko‘rish</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="pt-20 ticker-wrap">
+    <div id="tickerMove" class="ticker-move py-3 px-6 text-sm font-mono uppercase"></div>
+  </div>
+
+  <section id="home" class="hero-bg min-h-[86vh] flex items-center relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background-image:linear-gradient(rgba(212,175,55,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.35) 1px,transparent 1px);background-size:70px 70px;"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-[1.05fr_.95fr] gap-10 items-center py-20">
       <div>
-        <p class="eyebrow">FCONTROL.UZ</p>
-        <h1>Tommy Capital Index</h1>
-        <p class="subtitle">O‘zbekiston fond bozori uchun avtomatik TCI ma’lumot paneli</p>
-      </div>
-      <button id="reloadBtn">Yangilash</button>
-    </header>
-
-    <section class="cards">
-      <article class="card big">
-        <span>TCI qiymati</span>
-        <strong id="tciValue">—</strong>
-      </article>
-      <article class="card">
-        <span>Kunlik o‘zgarish</span>
-        <strong id="dailyReturn">—</strong>
-      </article>
-      <article class="card">
-        <span>Aksiyalar soni</span>
-        <strong id="countValue">—</strong>
-      </article>
-      <article class="card">
-        <span>Faol narxlar</span>
-        <strong id="activeValue">—</strong>
-      </article>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <div>
-          <h2>TCI tarkibi</h2>
-          <p id="statusText">Ma’lumot yuklanmoqda...</p>
+        <div class="inline-flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/25 text-yellow-300 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-7">
+          <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span> TCI Demo Platform
         </div>
-        <div class="meta">
-          <span id="dateValue">—</span>
-          <span id="updatedValue">—</span>
+        <h1 class="text-5xl md:text-7xl font-black leading-[.95] text-white mb-6">
+          Tommy Capital Index<br><span class="gold">Uzbekistan Market</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-300 max-w-2xl leading-relaxed mb-9">
+          O‘zbekiston fond bozorini kuzatish, sektorlarni solishtirish va TCI benchmarkini ko‘rsatish uchun premium analitik platforma.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a href="#index" class="px-8 py-4 rounded-2xl bg-yellow-400 text-slate-950 font-black text-center shadow-xl hover:bg-yellow-300">TCI Indeksni ko‘rish</a>
+          <a href="#portfolios" class="px-8 py-4 rounded-2xl border border-yellow-400/35 text-yellow-300 font-black text-center hover:bg-yellow-400/10">Sektorlarni ko‘rish</a>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Ticker</th>
-              <th>Narx</th>
-              <th>Kunlik %</th>
-              <th>Manba</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+      <div class="bg-white/8 border border-yellow-400/20 rounded-[32px] p-6 md:p-8 shadow-2xl backdrop-blur">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <p class="text-slate-400 text-sm font-bold uppercase">TCI Today</p>
+            <h2 class="text-5xl font-black text-white mt-1">1,452.80</h2>
+          </div>
+          <div class="px-4 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 font-black">▲ +1.24%</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl bg-white/10 p-4"><p class="text-slate-400 text-xs">Leader</p><b class="text-white">HMKB</b><p class="text-emerald-300 font-bold">+2.10%</p></div>
+          <div class="rounded-2xl bg-white/10 p-4"><p class="text-slate-400 text-xs">Loser</p><b class="text-white">IPTB</b><p class="text-red-300 font-bold">-0.65%</p></div>
+          <div class="rounded-2xl bg-white/10 p-4"><p class="text-slate-400 text-xs">Banking</p><b class="text-white">+1.80%</b></div>
+          <div class="rounded-2xl bg-white/10 p-4"><p class="text-slate-400 text-xs">Status</p><b class="text-yellow-300">Demo v0.1</b></div>
+        </div>
       </div>
-    </section>
-  </main>
-  <script src="app.js"></script>
+    </div>
+  </section>
+
+  <section id="index" class="py-20 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-10">
+        <h2 class="text-4xl font-black text-slate-950">TCI Indeksi</h2>
+        <p class="text-slate-600 mt-2">O‘zbekiston bozoridagi tanlangan kompaniyalar bo‘yicha demo benchmark.</p>
+      </div>
+      <div class="bg-white rounded-[28px] shadow-xl border overflow-hidden">
+        <div class="grid grid-cols-1 md:grid-cols-4 border-b">
+          <div class="p-6 border-r"><p class="text-sm text-slate-500 uppercase font-bold">Hozirgi qiymat</p><h3 class="text-4xl font-black mt-2">1,452.80</h3><p class="text-emerald-600 font-black mt-2">▲ +17.45 (+1.24%)</p></div>
+          <div class="p-6 border-r"><p class="text-sm text-slate-500 uppercase font-bold">Kunlik yuqori</p><h3 class="text-2xl font-black mt-2">1,465.10</h3></div>
+          <div class="p-6 border-r"><p class="text-sm text-slate-500 uppercase font-bold">Demo hajm</p><h3 class="text-2xl font-black mt-2">854.2 mlrd UZS</h3></div>
+          <div class="p-6 bg-slate-950 text-white"><p class="text-sm text-slate-400 uppercase font-bold">Bozor holati</p><h3 class="text-2xl font-black mt-2 text-yellow-400">Monitoring</h3></div>
+        </div>
+        <div class="p-6 md:p-8"><div class="chart-container"><canvas id="tciChart"></canvas></div></div>
+      </div>
+
+      <div class="mt-10 bg-white rounded-[28px] shadow-xl border overflow-hidden">
+        <div class="p-6 md:p-8 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h3 class="text-2xl font-black text-slate-950">TCI tarkibi: 30 kompaniya</h3>
+            <p class="text-slate-600 mt-1">DOCX ro‘yxatdagi emitentlar shu index blokiga ulandi. 10 tasi yadro, qolgani diversifikatsiya.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="renderStocks('all')" id="filter-all" class="filter-btn active px-4 py-2 rounded-xl border font-black text-sm">Hammasi</button>
+            <button onclick="renderStocks('Core')" id="filter-Core" class="filter-btn px-4 py-2 rounded-xl border font-black text-sm">Yadro 10</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="stock-table">
+            <thead><tr><th>#</th><th>Ticker</th><th>Kompaniya</th><th>Narx</th><th>Rol</th><th>Demo weight</th><th>Kunlik</th></tr></thead>
+            <tbody id="stockRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="portfolios" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-4xl font-black mb-3">Sektor portfellari</h2>
+      <p class="text-slate-600 mb-10">Hozircha demo. Real data keyingi bosqichda ulanadi.</p>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="tci-card p-7 rounded-3xl"><div class="text-yellow-600 font-black mb-4">BANK</div><h3 class="text-xl font-black">Banking Sector</h3><p class="text-slate-500 text-sm mt-2 mb-5">Banklar indeksi.</p><div class="space-y-2 text-sm"><p>SQBN <b class="text-emerald-600">+2.4%</b></p><p>IPTB <b class="text-red-600">-0.6%</b></p><p>HMKB <b class="text-emerald-600">+2.1%</b></p></div></div>
+        <div class="tci-card p-7 rounded-3xl"><div class="text-yellow-600 font-black mb-4">NRG</div><h3 class="text-xl font-black">Energy Sector</h3><p class="text-slate-500 text-sm mt-2 mb-5">Energetika va resurslar.</p><div class="space-y-2 text-sm"><p>Uzbekneftegaz <b class="text-emerald-600">+4.5%</b></p><p>IES <b class="text-red-600">-0.4%</b></p></div></div>
+        <div class="tci-card p-7 rounded-3xl"><div class="text-yellow-600 font-black mb-4">DIV</div><h3 class="text-xl font-black">Dividend Index</h3><p class="text-slate-500 text-sm mt-2 mb-5">Dividend beruvchi emitentlar.</p><div class="space-y-2 text-sm"><p>UZMK <b class="text-emerald-600">+0.8%</b></p><p>NKMK <b class="text-emerald-600">+1.5%</b></p></div></div>
+        <div class="tci-card p-7 rounded-3xl"><div class="text-yellow-600 font-black mb-4">IPO</div><h3 class="text-xl font-black">Privatization Watch</h3><p class="text-slate-500 text-sm mt-2 mb-5">IPO va davlat aktivlari monitoringi.</p><div class="space-y-2 text-sm"><p>UzNIF <b class="text-emerald-600">Active</b></p><p>SOE pipeline <b class="text-yellow-600">Watch</b></p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="market" class="py-20 bg-slate-950 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 items-center">
+      <div><h2 class="text-4xl font-black mb-5">O‘zbekiston bozori</h2><p class="text-slate-300 leading-relaxed">TCI maqsadi — bozor ma’lumotlarini oddiy, chiroyli va tushunarli ko‘rsatish. Bu sahifa demo, investitsiya tavsiyasi emas.</p></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="rounded-3xl bg-white/10 p-6"><span class="text-3xl font-black text-yellow-400">30</span><p class="text-slate-300 text-sm">TCI index companies</p></div>
+        <div class="rounded-3xl bg-white/10 p-6"><span class="text-3xl font-black text-yellow-400">10</span><p class="text-slate-300 text-sm">Core “yadro” companies</p></div>
+        <div class="rounded-3xl bg-white/10 p-6"><span class="text-3xl font-black text-emerald-400">▲</span><p class="text-slate-300 text-sm">Green = o‘sish</p></div>
+        <div class="rounded-3xl bg-white/10 p-6"><span class="text-3xl font-black text-red-400">▼</span><p class="text-slate-300 text-sm">Red = tushish</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="py-16 bg-white">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+      <h2 class="text-3xl font-black mb-4">Risk ogohlantirish</h2>
+      <p class="text-slate-600 leading-relaxed">Bu sayt hozircha demo va axborot maqsadida. Bu brokerlik, investitsiya maslahati yoki aktiv boshqaruvi xizmati emas. Real investitsiya qarorini mustaqil tahlil va litsenziyalangan mutaxassis maslahati bilan qabul qiling.</p>
+    </div>
+  </section>
+
+  <footer class="bg-slate-950 text-white py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between gap-6 items-center">
+      <div class="flex items-center gap-3"><img src="logo.svg" class="w-12 h-12 object-contain rounded-xl bg-white p-1"/><div><b>TOMMY CAPITAL INDEX</b><p class="text-xs text-slate-400">Launching Soon · TCI Demo v0.1</p></div></div>
+      <p class="text-xs text-slate-500">© 2026 Tommy Capital. Demo platform.</p>
+    </div>
+  </footer>
+
+  <script>
+
+    const tciStocks = [
+      { ticker: 'URTS', name: 'O‘zRTXB', role: 'Core', weight: 8.50, change: '+1.24%' },
+      { ticker: 'SQBN', name: 'O‘zsanoatqurilishbank', role: 'Core', weight: 8.50, change: '+0.50%' },
+      { ticker: 'IPTB', name: 'Ipoteka-bank', role: 'Core', weight: 8.50, change: '-0.20%' },
+      { ticker: 'BRBN', name: 'Biznesni rivojlantirish banki', role: 'Diversification', weight: 0.75, change: '+0.80%' },
+      { ticker: 'ALKB', name: 'Aloqabank', role: 'Core', weight: 8.50, change: '+1.10%' },
+      { ticker: 'TNBN', name: 'Turonbank', role: 'Diversification', weight: 0.75, change: '-0.15%' },
+      { ticker: 'TRSB', name: 'Trastbank', role: 'Diversification', weight: 0.75, change: '+0.35%' },
+      { ticker: 'CBSK', name: 'Chilonzor buyum savdo kompleksi', role: 'Diversification', weight: 0.75, change: '+0.62%' },
+      { ticker: 'UZTL', name: 'O‘zbektelekom', role: 'Core', weight: 8.50, change: '+1.44%' },
+      { ticker: 'DORI', name: 'DORI-DARMON', role: 'Diversification', weight: 0.75, change: '-0.05%' },
+      { ticker: 'GRBK', name: 'Garant bank', role: 'Diversification', weight: 0.75, change: '+1.24%' },
+      { ticker: 'IPKY', name: 'Ipak Yo‘li bank', role: 'Diversification', weight: 0.75, change: '+0.50%' },
+      { ticker: 'UNVB', name: 'Universal bank', role: 'Diversification', weight: 0.75, change: '-0.20%' },
+      { ticker: 'UZAS', name: 'O‘zagrosug‘urta', role: 'Diversification', weight: 0.75, change: '+0.80%' },
+      { ticker: 'UTGA', name: 'O‘ztransgaz', role: 'Diversification', weight: 0.75, change: '+1.10%' },
+      { ticker: 'OCBK', name: 'OCTOBANK', role: 'Diversification', weight: 0.75, change: '-0.15%' },
+      { ticker: 'UZIR', name: 'O‘zbekko‘mir', role: 'Diversification', weight: 0.75, change: '+0.35%' },
+      { ticker: 'UZMK', name: 'O‘zmetkombinat', role: 'Core', weight: 8.50, change: '+0.62%' },
+      { ticker: 'QZSM', name: 'Qizilqumsement', role: 'Core', weight: 8.50, change: '+1.44%' },
+      { ticker: 'KVTS', name: 'Kvarts', role: 'Core', weight: 8.50, change: '-0.05%' },
+      { ticker: 'HMKB', name: 'Hamkorbank', role: 'Core', weight: 8.50, change: '+1.24%' },
+      { ticker: 'UZAM', name: 'UzAuto Motors', role: 'Core', weight: 8.50, change: '+0.50%' },
+      { ticker: 'BIOK', name: 'Biokimyo', role: 'Diversification', weight: 0.75, change: '-0.20%' },
+      { ticker: 'METQ', name: 'METQ', role: 'Diversification', weight: 0.75, change: '+0.80%' },
+      { ticker: 'UPAT', name: 'O‘zparavtotrans', role: 'Diversification', weight: 0.75, change: '+1.10%' },
+      { ticker: 'UTYK', name: 'O‘ztemiryo‘lkonteyner', role: 'Diversification', weight: 0.75, change: '-0.15%' },
+      { ticker: 'TGPG', name: 'TASHGIPROGOR', role: 'Diversification', weight: 0.75, change: '+0.35%' },
+      { ticker: 'BNGP', name: 'Buxoroneftgazparmalash', role: 'Diversification', weight: 0.75, change: '+0.62%' },
+      { ticker: 'KSCM', name: 'Quvasoysement', role: 'Diversification', weight: 0.75, change: '+1.44%' },
+      { ticker: 'OHDN', name: 'Ohangaron don', role: 'Diversification', weight: 0.75, change: '-0.05%' }
+    ];
+
+    function renderTicker(){
+      const items = tciStocks.slice(0, 15).concat(tciStocks.slice(0, 15));
+      document.getElementById('tickerMove').innerHTML = items.map(s => {
+        const up = !s.change.startsWith('-');
+        const c = up ? 'text-emerald-400' : 'text-red-400';
+        return `<span>${s.ticker} <b class="${c}">${s.change}</b></span>`;
+      }).join('');
+    }
+
+    function renderStocks(filter='all'){
+      const rows = tciStocks.filter(s => filter === 'all' || s.role === filter);
+      document.getElementById('stockRows').innerHTML = rows.map((s, i) => {
+        const up = !s.change.startsWith('-');
+        const roleText = s.role === 'Core' ? 'Yadro' : 'Diversifikatsiya';
+        const badge = s.role === 'Core' ? 'badge-core' : 'badge-div';
+        return `<tr>
+          <td class="text-slate-500 font-bold">${i+1}</td>
+          <td><b class="text-slate-950">${s.ticker}</b></td>
+          <td>${s.name}</td>
+          <td class="font-mono font-bold">${s.priceText || "—"}</td>
+          <td><span class="${badge} px-3 py-1 rounded-full text-xs font-black">${roleText}</span></td>
+          <td>${s.weight.toFixed(2)}%</td>
+          <td class="font-black ${up ? 'text-emerald-600' : 'text-red-600'}">${s.change}</td>
+        </tr>`;
+      }).join('');
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      document.getElementById('filter-'+filter).classList.add('active');
+    }
+
+    function initTCIChart(){
+      const ctx=document.getElementById('tciChart').getContext('2d');
+      const gradient=ctx.createLinearGradient(0,0,0,340);
+      gradient.addColorStop(0,'rgba(212,175,55,.35)'); gradient.addColorStop(1,'rgba(212,175,55,0)');
+      new Chart(ctx,{type:'line',data:{labels:['1 May','5 May','10 May','15 May','20 May','25 May','30 May','Bugun'],datasets:[{data:[1280,1310,1295,1340,1385,1410,1435,1452.80],borderColor:'#d4af37',borderWidth:3,pointBackgroundColor:'#0f172a',pointBorderColor:'#d4af37',tension:.38,fill:true,backgroundColor:gradient}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f172a',padding:12,cornerRadius:10,displayColors:false}},scales:{y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b'}},x:{grid:{display:false},ticks:{color:'#64748b'}}}}});
+    }
+
+    async function fetchLiveTCI(){
+      const urls = [
+        './public/tci_latest.json',
+        'public/tci_latest.json',
+        'https://raw.githubusercontent.com/umidxalimovich1991-dotcom/tci-data-engine/main/public/tci_latest.json'
+      ];
+      for (const url of urls) {
+        try {
+          const r = await fetch(url + '?v=' + Date.now(), { cache: 'no-store' });
+          if (r.ok) return await r.json();
+        } catch (e) {}
+      }
+      return null;
+    }
+
+    function applyLiveTCI(data){
+      if (!data || !Array.isArray(data.constituents)) return;
+      const byTicker = {};
+      data.constituents.forEach(x => { if (x.ticker) byTicker[String(x.ticker).toUpperCase()] = x; });
+
+      tciStocks.forEach(s => {
+        const live = byTicker[s.ticker.toUpperCase()];
+        if (!live) return;
+        if (live.price !== null && live.price !== undefined) {
+          s.priceText = Number(live.price).toLocaleString('en-US', { maximumFractionDigits: 4 }) + ' UZS';
+        }
+        if (live.daily_return !== null && live.daily_return !== undefined) {
+          const pct = Number(live.daily_return) * 100;
+          s.change = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+        }
+      });
+
+      const valueNodes = Array.from(document.querySelectorAll('h2, h3'));
+      const tciValue = data.tci_value || data.base_value;
+      if (tciValue) {
+        valueNodes.forEach(el => {
+          if (el.textContent.trim() === '1,452.80') {
+            el.textContent = Number(tciValue).toLocaleString('en-US', { maximumFractionDigits: 2 });
+          }
+        });
+      }
+
+      renderTicker();
+      renderStocks('all');
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderTicker();
+      renderStocks('all');
+      initTCIChart();
+      const live = await fetchLiveTCI();
+      applyLiveTCI(live);
+    });
+  </script>
 </body>
 </html>
