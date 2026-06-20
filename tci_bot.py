@@ -1,6 +1,8 @@
 import csv
 import json
 import math
+import os
+import re
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -14,12 +16,25 @@ PUBLIC_DIR = ROOT / "public"
 DATA_DIR.mkdir(exist_ok=True)
 PUBLIC_DIR.mkdir(exist_ok=True)
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 TCI Data Engine",
-    "Accept": "application/json, text/plain, */*",
-    "Origin": "https://app.jett.uz",
-    "Referer": "https://app.jett.uz/",
-}
+
+def build_headers() -> dict[str, str]:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "uz-UZ,uz;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6",
+        "Origin": "https://app.jett.uz",
+        "Referer": "https://app.jett.uz/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-site",
+    }
+    cookie = os.getenv("JETT_COOKIE", "").strip()
+    token = os.getenv("JETT_AUTH_TOKEN", "").strip()
+    if cookie:
+        headers["Cookie"] = cookie
+    if token:
+        headers["Authorization"] = token if token.lower().startswith("bearer ") else f"Bearer {token}"
+    return headers
 
 
 def load_config() -> dict[str, Any]:
@@ -52,7 +67,12 @@ def normalize_ticker(value: Any) -> str:
 
 
 def fetch_json(session: requests.Session, url: str, *, params: dict[str, Any] | None = None) -> Any:
-    r = session.get(url, params=params, headers=HEADERS, timeout=30)
+    r = session.get(url, params=params, headers=build_headers(), timeout=30)
+    if r.status_code == 403:
+        print("[ERROR] Jett API returned 403 Forbidden.")
+        print("[ERROR] GitHub Actions server is blocked or JETT_COOKIE/JETT_AUTH_TOKEN is missing/expired.")
+        print("[ERROR] URL:", r.url)
+        print("[ERROR] Add repo secret: Settings -> Secrets and variables -> Actions -> JETT_COOKIE")
     r.raise_for_status()
     return r.json()
 
@@ -92,7 +112,6 @@ def fetch_all_stocks(session: requests.Session, cfg: dict[str, Any]) -> list[dic
         }
         payload = fetch_json(session, url, params=params)
 
-        # DEBUG: Actions logda Jett response formatini ko‘rish uchun
         if offset == 0:
             print(f"[DEBUG] payload type: {type(payload).__name__}")
             if isinstance(payload, dict):
@@ -143,10 +162,27 @@ def stock_name(item: dict[str, Any]) -> str:
 def price_from_dict(d: dict[str, Any]) -> float | None:
     for key in [
         "last_price", "lastPrice", "current_price", "currentPrice", "close_price", "closePrice",
-        "price", "narx", "rate", "value", "best_price", "bestPrice"
+        "price", "narx", "rate", "value", "best_price", "bestPrice",
+        "best_sell_price", "bestSellPrice", "best_buy_price", "bestBuyPrice",
+        "sell_price", "sellPrice", "buy_price", "buyPrice",
     ]:
         if key in d:
             n = as_number(d.get(key))
+            if n is not None and n > 0:
+                return n
+    return None
+
+
+def extract_price_from_text(text: str) -> float | None:
+    patterns = [
+        r"Best Sell Price:\s*UZS\s*([0-9 ,.]+)",
+        r"Best Buy Price:\s*UZS\s*([0-9 ,.]+)",
+        r"price[^0-9]{0,20}([0-9]+(?:[.,][0-9]+)?)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, re.I)
+        if m:
+            n = as_number(m.group(1))
             if n is not None and n > 0:
                 return n
     return None
@@ -207,6 +243,11 @@ def extract_orderbook_price(payload: Any) -> tuple[float | None, str]:
         p = extract_price_from_rows(rows, "bid")
         if p is not None:
             return p, "best_bid"
+
+    # Last fallback: search raw JSON text for price-like phrases.
+    p = extract_price_from_text(json.dumps(payload, ensure_ascii=False)[:20000])
+    if p is not None:
+        return p, "text_price"
 
     return None, "no_price"
 
@@ -332,7 +373,7 @@ def build_tci_data() -> dict[str, Any]:
         "stocks": rows,
         "data": rows,
         "results": rows,
-        "source_note": "Live data from Jett public API: stockv3 and orderbook/{id}. Verify before publication.",
+        "source_note": "Live data from Jett public API: stockv3 and orderbook/{id}. If 403, add JETT_COOKIE repository secret.",
     }
     return latest
 
