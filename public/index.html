@@ -1,1 +1,145 @@
-<!doctype html><html lang="uz"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tommy Capital — TCI Market</title><link rel="stylesheet" href="./styles.css"><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head><body><header class="topbar"><div class="brand"><span class="brand-mark">TC</span><div><b>Tommy Capital</b><small>TCI Market</small></div></div><nav><a class="active" href="#dashboard">Dashboard</a><a href="#market">Market</a><a href="#portfolio">Portfolio</a><a href="#news">News</a></nav><div class="actions"><input id="search" placeholder="Search market..."><button id="refresh">↻</button><button class="avatar">U</button></div></header><main id="dashboard" class="container"><section class="hero"><div><p class="eyebrow">TOMMY CAPITAL INDEX</p><h1>Welcome to TCI Market 👋</h1><p class="muted">O‘zbekiston fond bozorini kuzating, TCI indeksini tahlil qiling va bozor harakatlarini bir joydan ko‘ring.</p></div><div class="updated">Market data<br><strong id="updated">—</strong></div></section><section class="cards"><article class="card primary"><span>TCI Index</span><strong id="indexValue">—</strong><em id="indexChange">—</em></article><article class="card orange"><span>Today's Market</span><strong id="marketStatus">—</strong><small>Live data engine</small></article><article class="card purple"><span>Active Stocks</span><strong id="stockCount">—</strong><small>TCI basket</small></article><article class="card dark"><span>Top Growth Score</span><strong id="topScore">—</strong><small id="topStock">—</small></article></section><section class="grid-main"><article class="panel chart-panel"><div class="panel-head"><div><h2>TCI Performance</h2><p class="muted">Index historical performance</p></div><select id="period"><option>1 Month</option><option>3 Months</option><option>6 Months</option><option>1 Year</option></select></div><canvas id="indexChart"></canvas></article><article class="panel movers-panel"><div class="panel-head"><h2>Market Movers</h2><div class="tabs"><button class="tab active" data-tab="gainers">Top Gainers</button><button class="tab" data-tab="losers">Top Losers</button></div></div><div id="movers" class="movers"></div></article></section><section id="market" class="panel table-panel"><div class="panel-head"><div><h2>Market Overview</h2><p class="muted">TCI basket — O‘zbekiston aksiyalari</p></div><input id="tableSearch" placeholder="Search stocks..."></div><div class="table-wrap"><table><thead><tr><th>Company</th><th>Ticker</th><th>Price</th><th>Change</th><th>Volume</th><th>TCI Weight</th><th>Growth Score</th></tr></thead><tbody id="stocks"></tbody></table></div></section><section class="panel insight"><div><p class="eyebrow">TCI ANALYTICS</p><h2>Future Growth Radar</h2><p class="muted">Analitik reyting: Growth Score, bozor dinamikasi va mavjud ma'lumotlar asosida.</p></div><div class="score-list" id="scores"></div></section></main><footer>© Tommy Capital — Tommy Capital Index</footer><script src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tommy Capital — TCI Market</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">TC</span>
+      <div>
+        <b>Tommy Capital</b>
+        <small>TCI Market</small>
+      </div>
+    </div>
+    <nav>
+      <a class="active" href="#dashboard">Dashboard</a>
+      <a href="#market">Market</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#news">News</a>
+    </nav>
+    <div class="actions">
+      <input id="search" placeholder="Search market...">
+      <button id="refresh">↻</button>
+      <button class="avatar">U</button>
+    </div>
+  </header>
+
+  <main id="dashboard" class="container">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">TOMMY CAPITAL INDEX</p>
+        <h1>Welcome to TCI Market 👋</h1>
+        <p class="muted">
+          O‘zbekiston fond bozorini kuzating, TCI indeksini tahlil qiling
+          va bozor harakatlarini bir joydan ko‘ring.
+        </p>
+      </div>
+      <div class="updated">
+        Market data<br>
+        <strong id="updated">—</strong>
+      </div>
+    </section>
+
+    <section class="cards">
+      <article class="card primary">
+        <span>TCI Index</span>
+        <strong id="indexValue">—</strong>
+        <em id="indexChange">—</em>
+      </article>
+      <article class="card orange">
+        <span>Today's Market</span>
+        <strong id="marketStatus">—</strong>
+        <small>Live data engine</small>
+      </article>
+      <article class="card purple">
+        <span>Active Stocks</span>
+        <strong id="stockCount">—</strong>
+        <small>TCI basket</small>
+      </article>
+      <article class="card dark">
+        <span>Top Growth Score</span>
+        <strong id="topScore">—</strong>
+        <small id="topStock">—</small>
+      </article>
+    </section>
+
+    <section class="grid-main">
+      <article class="panel chart-panel">
+        <div class="panel-head">
+          <div>
+            <h2>TCI Performance</h2>
+            <p class="muted">Index historical performance</p>
+          </div>
+          <select id="period">
+            <option>1 Month</option>
+            <option>3 Months</option>
+            <option>6 Months</option>
+            <option>1 Year</option>
+          </select>
+        </div>
+        <canvas id="indexChart"></canvas>
+      </article>
+
+      <article class="panel movers-panel">
+        <div class="panel-head">
+          <h2>Market Movers</h2>
+          <div class="tabs">
+            <button class="tab active" data-tab="gainers">Top Gainers</button>
+            <button class="tab" data-tab="losers">Top Losers</button>
+          </div>
+        </div>
+        <div id="movers" class="movers"></div>
+      </article>
+    </section>
+
+    <section id="market" class="panel table-panel">
+      <div class="panel-head">
+        <div>
+          <h2>Market Overview</h2>
+          <p class="muted">TCI basket — O‘zbekiston aksiyalari</p>
+        </div>
+        <input id="tableSearch" placeholder="Search stocks...">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Ticker</th>
+              <th>Price</th>
+              <th>Change</th>
+              <th>Volume</th>
+              <th>TCI Weight</th>
+              <th>Growth Score</th>
+            </tr>
+          </thead>
+          <tbody id="stocks"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel insight">
+      <div>
+        <p class="eyebrow">TCI ANALYTICS</p>
+        <h2>Future Growth Radar</h2>
+        <p class="muted">
+          Analitik reyting: Growth Score, bozor dinamikasi va mavjud
+          ma'lumotlar asosida.
+        </p>
+      </div>
+      <div class="score-list" id="scores"></div>
+    </section>
+  </main>
+
+  <footer>
+    © Tommy Capital — Tommy Capital Index
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
