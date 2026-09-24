@@ -1,173 +1,75 @@
 <!doctype html>
 <html lang="uz">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#050505">
-  <title>FaceControl.uz — Tez orada</title>
-  <meta name="description" content="FaceControl.uz — O'zbekistonning premium city lifestyle, restoranlar, kafe, moda va tadbirlar media platformasi. Tez orada.">
-  <style>
-    :root{
-      --bg:#050505;--text:#f7f7f2;--muted:#a6a6a0;--line:rgba(255,255,255,.12);
-      --gold:#d8b45a;--gold2:#f4d487;--panel:rgba(255,255,255,.055);
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
-    a{color:inherit;text-decoration:none}
-    .noise{position:fixed;inset:0;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");z-index:20}
-    .glow{position:absolute;width:48vw;height:48vw;max-width:680px;max-height:680px;right:-14vw;top:10vh;background:radial-gradient(circle,rgba(216,180,90,.17),rgba(216,180,90,0) 68%);filter:blur(4px)}
-    .container{width:min(1180px,92vw);margin:0 auto}
-    header{position:fixed;top:0;left:0;right:0;z-index:10;border-bottom:1px solid transparent;background:linear-gradient(to bottom,rgba(5,5,5,.88),rgba(5,5,5,.34),transparent);backdrop-filter:blur(8px)}
-    .nav{height:78px;display:flex;align-items:center;justify-content:space-between}
-    .brand{font-size:18px;font-weight:950;letter-spacing:.16em}
-    .brand span{color:var(--gold)}
-    .navlink{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#c6c6bf}
-    .navcta{padding:11px 16px;border:1px solid rgba(216,180,90,.45);border-radius:999px;color:var(--gold2);font-weight:800;font-size:12px}
-    .hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:120px 0 70px;isolation:isolate}
-    .hero:before{content:"";position:absolute;inset:0;background:
-      radial-gradient(circle at 16% 28%,rgba(255,255,255,.04),transparent 25%),
-      linear-gradient(120deg,rgba(255,255,255,.02),transparent 44%),
-      linear-gradient(to bottom,transparent 50%,#050505 100%);
-      z-index:-2}
-    .hero-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:56px;align-items:center}
-    .kicker{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);padding:9px 13px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#d6d6cf}
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 16px rgba(216,180,90,.8);animation:pulse 1.7s infinite}
-    h1{font-size:clamp(58px,9.5vw,122px);line-height:.82;letter-spacing:-.065em;margin:26px 0 24px;font-weight:950;max-width:900px}
-    h1 .gold{color:var(--gold2)}
-    .lead{font-size:clamp(18px,2vw,23px);line-height:1.45;color:#c2c2bc;max-width:680px;margin:0 0 34px}
-    .actions{display:flex;gap:12px;flex-wrap:wrap}
-    .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 22px;border-radius:15px;font-size:14px;font-weight:900;letter-spacing:.02em}
-    .btn-primary{background:linear-gradient(135deg,#f1d17e,#c39a42);color:#070707;box-shadow:0 14px 45px rgba(216,180,90,.16)}
-    .btn-secondary{border:1px solid var(--line);background:rgba(255,255,255,.03);color:#f0f0eb}
-    .side-card{position:relative;border:1px solid rgba(216,180,90,.22);background:
-      linear-gradient(180deg,rgba(216,180,90,.10),rgba(255,255,255,.035)),
-      rgba(255,255,255,.025);border-radius:30px;padding:34px;min-height:420px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;box-shadow:0 28px 100px rgba(0,0,0,.35)}
-    .side-card:before{content:"";position:absolute;width:240px;height:240px;right:-70px;top:-80px;background:radial-gradient(circle,rgba(244,212,135,.26),transparent 66%)}
-    .fc-word{font-size:clamp(92px,13vw,170px);line-height:.74;font-weight:950;letter-spacing:-.09em;color:transparent;-webkit-text-stroke:1px rgba(244,212,135,.5)}
-    .status{display:flex;justify-content:space-between;align-items:end;gap:20px;padding-top:26px;border-top:1px solid var(--line)}
-    .status small{text-transform:uppercase;letter-spacing:.15em;color:#8f8f88;font-weight:800}
-    .status strong{display:block;font-size:24px;color:var(--gold2);margin-top:7px}
-    section{padding:110px 0}
-    .section-kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:900;margin-bottom:15px}
-    .section-title{font-size:clamp(34px,5vw,60px);letter-spacing:-.045em;line-height:.95;margin:0 0 18px;font-weight:950}
-    .section-copy{color:#aeadA7;max-width:700px;line-height:1.65;font-size:16px}
-    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:44px}
-    .feature{border:1px solid var(--line);border-radius:24px;padding:25px;background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));min-height:180px}
-    .num{color:#70706a;font-size:12px;font-weight:900;letter-spacing:.15em}
-    .feature h3{font-size:20px;margin:35px 0 10px}
-    .feature p{margin:0;color:#999992;line-height:1.5;font-size:14px}
-    .launch{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:
-      radial-gradient(circle at 70% 50%,rgba(216,180,90,.13),transparent 36%),
-      linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
-    .launch-box{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center}
-    .launch-note{color:#9f9f98;font-size:13px;line-height:1.55;max-width:600px}
-    .time{font-variant-numeric:tabular-nums;font-size:clamp(42px,6vw,76px);font-weight:950;letter-spacing:-.06em;color:#fff}
-    footer{padding:30px 0 50px;color:#77776f;font-size:12px}
-    .footer-row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-    .mini{letter-spacing:.15em;text-transform:uppercase}
-    @keyframes pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
-    @media(max-width:900px){
-      .hero-grid{grid-template-columns:1fr}
-      .side-card{min-height:320px}
-      .features{grid-template-columns:1fr 1fr}
-      .launch-box{grid-template-columns:1fr}
-    }
-    @media(max-width:580px){
-      .navlink{display:none}
-      .nav{height:70px}
-      .hero{padding-top:100px}
-      .features{grid-template-columns:1fr}
-      section{padding:80px 0}
-      .side-card{padding:25px}
-      h1{font-size:clamp(54px,16vw,86px)}
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a0a">
+<title>FaceControl — Coming Soon</title>
+<meta name="description" content="FaceControl.uz — coming soon.">
+<style>
+:root{--black:#0a0a0a;--white:#f5f5f2;--gray:#8c8c87;--line:#242424}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--black);color:var(--white);font-family:Arial,Helvetica,sans-serif}
+a{color:inherit;text-decoration:none}
+.page{min-height:100vh;display:flex;flex-direction:column}
+header{height:88px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:15px;font-weight:800;letter-spacing:.26em}
+.logo span{font-weight:400}
+.header-right{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray)}
+main{flex:1;display:flex;align-items:center}
+.hero{width:min(1300px,90vw);margin:auto;padding:60px 0 100px}
+.eyebrow{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gray);margin-bottom:30px}
+h1{font-size:clamp(70px,14vw,190px);line-height:.78;letter-spacing:-.085em;font-weight:700;margin:0;max-width:1200px}
+h1 span{display:block}
+.hollow{-webkit-text-stroke:1px #eee;color:transparent}
+.subrow{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid var(--line);margin-top:65px;padding-top:22px;gap:30px}
+.statement{font-size:clamp(18px,2vw,27px);line-height:1.25;max-width:540px;letter-spacing:-.02em}
+.meta{text-align:right;color:var(--gray);font-size:10px;line-height:1.8;letter-spacing:.15em;text-transform:uppercase}
+.bottom{width:min(1300px,90vw);margin:auto;padding:0 0 35px;border-top:1px solid var(--line);padding-top:18px;display:flex;justify-content:space-between;color:#666;font-size:9px;letter-spacing:.15em;text-transform:uppercase}
+.circle{position:absolute;width:320px;height:320px;border:1px solid #202020;border-radius:50%;right:7vw;top:23vh;pointer-events:none}
+.circle:after{content:"";position:absolute;inset:28px;border:1px solid #181818;border-radius:50%}
+@media(max-width:700px){
+header{height:72px;padding:0 6vw}.header-right{display:none}
+.hero{width:88vw;padding:80px 0 70px}.eyebrow{margin-bottom:25px}
+h1{font-size:clamp(60px,18vw,115px)}
+.subrow{margin-top:55px;display:block}.meta{text-align:left;margin-top:30px}
+.circle{width:190px;height:190px;right:-80px;top:28vh;opacity:.5}
+.bottom{width:88vw;gap:20px}.bottom span:last-child{text-align:right}
+}
+</style>
 </head>
 <body>
-<div class="noise"></div>
-<div class="glow"></div>
-
+<div class="page">
 <header>
-  <div class="container nav">
-    <a class="brand" href="#">FACE<span>CONTROL</span></a>
-    <a class="navlink" href="#about">Platforma</a>
-    <a class="navcta" href="#notify">TEZ ORADA</a>
-  </div>
+<a class="logo" href="/">FACE<span>CONTROL</span></a>
+<div class="header-right">facecontrol.uz</div>
 </header>
 
 <main>
-  <section class="hero">
-    <div class="container hero-grid">
-      <div>
-        <div class="kicker"><span class="dot"></span> Yangi media platforma</div>
-        <h1>FACE<span class="gold">CONTROL</span><br>TEZ ORADA.</h1>
-        <p class="lead">Shahar hayoti. Joylar. Odamlar. Tadbirlar. Restoranlar. Moda. Bir platformada — yangi avlod city lifestyle media.</p>
-        <div class="actions" id="notify">
-          <a class="btn btn-primary" href="https://www.instagram.com/" target="_blank" rel="noopener">Instagramni kuzatish</a>
-          <a class="btn btn-secondary" href="mailto:info@facecontrol.uz">Bog‘lanish</a>
-        </div>
-      </div>
-      <div class="side-card">
-        <div>
-          <div class="section-kicker">Launching soon</div>
-          <div class="fc-word">FC</div>
-        </div>
-        <div class="status">
-          <div>
-            <small>Holat</small>
-            <strong>Tez orada ishga tushadi</strong>
-          </div>
-          <div style="text-align:right">
-            <small>URL</small>
-            <strong>facecontrol.uz</strong>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+<section class="hero">
+<div class="eyebrow">Independent city media / Uzbekistan</div>
+<h1><span>FACE</span><span class="hollow">CONTROL</span></h1>
 
-  <section id="about">
-    <div class="container">
-      <div class="section-kicker">FaceControl nima?</div>
-      <h2 class="section-title">Shaharni ko‘rsatishning<br>yangi usuli.</h2>
-      <p class="section-copy">FaceControl — lokal bizneslar va auditoriyani bir joyda uchrashtiradigan media platforma. Kontent, joylar, odamlar va premium city-life tajribasi bitta brend ostida jamlanadi.</p>
-      <div class="features">
-        <article class="feature"><div class="num">01 / MEDIA</div><h3>City Stories</h3><p>Shahar hayoti, odamlar va trendlar haqida original kontent.</p></article>
-        <article class="feature"><div class="num">02 / PLACES</div><h3>Places</h3><p>Kafe, restoran, spa, klinika, barber va boshqa joylarni kashf qilish.</p></article>
-        <article class="feature"><div class="num">03 / PEOPLE</div><h3>FaceControl</h3><p>Real odamlar, real joylar va esda qoladigan portretlar.</p></article>
-        <article class="feature"><div class="num">04 / BUSINESS</div><h3>Business</h3><p>Lokal bizneslar uchun reklama, ko‘rinish va auditoriya bilan aloqa.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section class="launch">
-    <div class="container launch-box">
-      <div>
-        <div class="section-kicker">Coming soon</div>
-        <h2 class="section-title">FaceControl.<span class="gold">uz</span></h2>
-        <p class="launch-note">Platforma ishga tushirilmoqda. Birinchi bosqichda premium landing, Instagram kontenti va lokal hamkorlar tarmog‘i yo‘lga qo‘yiladi.</p>
-      </div>
-      <div class="time" id="clock">LIVE SOON</div>
-    </div>
-  </section>
+<div class="subrow">
+<div class="statement">
+Shahar. Odamlar. Joylar.<br>
+<strong>Yangi platforma tez orada.</strong>
+</div>
+<div class="meta">
+Launching soon<br>
+2026<br>
+Bukhara · Uzbekistan
+</div>
+</div>
+</section>
 </main>
 
-<footer>
-  <div class="container footer-row">
-    <div class="mini">FACEControl.uz</div>
-    <div>© 2026 FaceControl. Barcha huquqlar himoyalangan.</div>
-  </div>
-</footer>
+<div class="bottom">
+<span>FC / 001</span>
+<span>Coming soon — follow the story</span>
+</div>
 
-<script>
-  const clock = document.getElementById('clock');
-  const updateClock = () => {
-    const d = new Date();
-    clock.textContent = d.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
-  };
-  updateClock();
-  setInterval(updateClock,1000);
-</script>
+<div class="circle"></div>
+</div>
 </body>
 </html>
