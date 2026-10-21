@@ -341,11 +341,11 @@ def build_tci_data() -> dict[str, Any]:
             if stock_id is not None:
                 try:
                     price, ob_payload, method = fetch_orderbook(session, cfg, stock_id)
-                    if price is not None:
+                    if price is not None and method == "top_level_price" and fallback is None:
                         row["price"] = price
                         row["last_price"] = price
                         row["current_price"] = price
-                    row["price_method"] = method
+                    row["price_method"] = ("stockv3_price" if fallback is not None else "orderbook_" + method + "_indicative")
                     row["raw_orderbook"] = json.dumps(ob_payload, ensure_ascii=False)[:1200]
                 except Exception as e:
                     row["price_method"] = f"orderbook_error:{type(e).__name__}"
@@ -354,7 +354,7 @@ def build_tci_data() -> dict[str, Any]:
         rows.append(row)
 
     active_returns = [r["daily_return"] for r in rows if r.get("daily_return") is not None]
-    daily = sum(active_returns) / len(active_returns) if active_returns else 0
+    daily = sum(active_returns) / len(active_returns) if active_returns else None
     base_value = float(cfg.get("base_value", 10000))
 
     latest = {
@@ -362,8 +362,9 @@ def build_tci_data() -> dict[str, Any]:
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "source": "jett",
         "base_value": base_value,
-        "tci_value": round(base_value * (1 + daily), 4),
-        "daily_return": round(daily, 8),
+        "tci_value": None,
+        "daily_return": daily,
+        "index_status": "not_calculated",
         "constituents_count": len(rows),
         "found_in_stockv3_count": found_count,
         "active_price_count": len([r for r in rows if r.get("price") is not None]),
@@ -373,7 +374,7 @@ def build_tci_data() -> dict[str, Any]:
         "stocks": rows,
         "data": rows,
         "results": rows,
-        "source_note": "Live data from Jett public API: stockv3 and orderbook/{id}. If 403, add JETT_COOKIE repository secret.",
+        "source_note": "Indicative Jett data only. Orderbook bid/ask is not a last traded price. A valid TCI index requires historical constituent prices, weights, and a defined methodology.",
     }
     return latest
 
@@ -397,7 +398,7 @@ def main() -> None:
     latest = build_tci_data()
     save_outputs(latest)
     print("TCI source:", latest["source"])
-    print("TCI latest saved:", latest["tci_value"])
+    print("TCI index status:", latest["index_status"])
     print("Found tickers:", latest["found_in_stockv3_count"])
     print("Active prices:", latest["active_price_count"])
 

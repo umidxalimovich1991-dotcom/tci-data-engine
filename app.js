@@ -30,23 +30,24 @@ async function loadData(){
 
 function render(data, used){
   const rows = Array.isArray(data.constituents) ? data.constituents : [];
-  el('tciValue').textContent = fmt(data.tci_value ?? data.base_value);
+  el('tciValue').textContent = fmt(data.tci_value);
   el('dailyReturn').textContent = pct(data.daily_return);
   el('countValue').textContent = data.constituents_count ?? rows.length;
   el('activeValue').textContent = rows.filter(r => r.price !== null && r.price !== undefined).length;
   el('dateValue').textContent = data.date || '—';
   el('updatedValue').textContent = data.updated_at ? new Date(data.updated_at).toLocaleString() : '—';
-  el('statusText').textContent = `Manba: ${used}`;
+  el('statusText').textContent = `Manba: ${used}. Indeks hisoblanmagan bo‘lsa, qiymat ko‘rsatilmaydi.`;
 
+  const escapeHtml = v => String(v ?? '—').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   el('tbody').innerHTML = rows.map((r, i) => {
     const d = Number(r.daily_return || 0);
     const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : '';
     return `<tr>
       <td>${i + 1}</td>
-      <td class="ticker">${r.ticker || '—'}</td>
+      <td class="ticker">${escapeHtml(r.ticker)}</td>
       <td class="price">${fmt(r.price)}</td>
       <td class="${cls}">${r.daily_return == null ? '—' : pct(r.daily_return)}</td>
-      <td class="source" title="${r.source || ''}">${r.source || '—'}</td>
+      <td class="source" title="${escapeHtml(r.source || '')}">${escapeHtml(r.source)}</td>
     </tr>`;
   }).join('');
 }
